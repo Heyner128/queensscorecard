@@ -1,0 +1,3 @@
+{
+  "image": "ghcr.io/devcontainers/templates/go-postgres:4.1.0"
+}
