@@ -5,7 +5,7 @@ import (
 	"bytes"
 	"iter"
 	"log"
-	"os"
+	"net/http"
 	"regexp"
 	"strconv"
 	"strings"
@@ -38,11 +38,11 @@ func isMessageQueensScore(message string) bool {
 }
 
 func GetScoresFromExport() iter.Seq[ScoreDto] {
-	contents, readErr := os.ReadFile("chat.txt")
-	if readErr != nil {
-		log.Fatal("failed to read the file")
+	resp, err := http.Get("https://queensscorecard.blob.core.windows.net/exports/_chat.txt")
+	if err != nil {
+		log.Fatal(err)
 	}
-	scanner := bufio.NewScanner(bytes.NewReader(contents))
+	scanner := bufio.NewScanner(resp.Body)
 	scanner.Split(scanMessages)
 	return func(yield func(ScoreDto) bool) {
 		for scanner.Scan() {
@@ -71,7 +71,6 @@ func extractTimestampFromMessage(message string) time.Time {
 	re := regexp.MustCompile("\\[(.+)]")
 	match := re.FindStringSubmatch(message)
 	t, _ := time.Parse("02/01/2006 15:04:05", match[1])
-	log.Println(t)
 	return t
 }
 

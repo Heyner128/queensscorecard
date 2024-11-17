@@ -6,6 +6,7 @@ package cmd
 import (
 	"QueensScorecard/db"
 	"github.com/spf13/cobra"
+	"log"
 )
 
 // importCmd represents the import command
@@ -17,7 +18,7 @@ the chat.txt exported from whatsapp`,
 	Run: func(cmd *cobra.Command, args []string) {
 		err := db.RunImport()
 		if err != nil {
-			return
+			log.Fatal(err)
 		}
 	},
 }

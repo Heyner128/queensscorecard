@@ -1,9 +1,8 @@
 CREATE TABLE IF NOT EXISTS scores (
-    id INTEGER PRIMARY KEY,
-    name TEXT NOT NULL,
-    gameNumber INTEGER NOT NULL,
-    secondsToSolve INTEGER NOT NULL,
-    timestamp INTEGER NOT NULL,
-    UNIQUE(name, gameNumber, timestamp)
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    gameNumber INT NOT NULL,
+    secondsToSolve INT NOT NULL,
+    timestamp INT NOT NULL,
+    UNIQUE KEY unique_name_game_timestamp (name, gameNumber, timestamp)
 );
-

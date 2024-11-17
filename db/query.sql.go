@@ -7,10 +7,11 @@ package db
 
 import (
 	"context"
+	"database/sql"
 )
 
 const createScore = `-- name: CreateScore :exec
-INSERT OR IGNORE INTO scores (
+INSERT IGNORE INTO scores (
     name,
     gameNumber,
     secondsToSolve,
@@ -26,9 +27,9 @@ VALUES (
 
 type CreateScoreParams struct {
 	Name           string
-	Gamenumber     int64
-	Secondstosolve int64
-	Timestamp      int64
+	Gamenumber     int32
+	Secondstosolve int32
+	Timestamp      int32
 }
 
 func (q *Queries) CreateScore(ctx context.Context, arg CreateScoreParams) error {
@@ -44,18 +45,18 @@ func (q *Queries) CreateScore(ctx context.Context, arg CreateScoreParams) error 
 const getFastestPlayersByMonth = `-- name: GetFastestPlayersByMonth :many
 SELECT
     name,
-    group_concat(strftime('%Y-%m', datetime(timestamp, 'unixepoch')),', ') as week,
-    COUNT(*) as fastest_count
+    GROUP_CONCAT(DATE_FORMAT(FROM_UNIXTIME(timestamp), '%Y-%m'), ', ') AS month,
+    COUNT(*) AS fastest_count
 FROM
     scores
-WHERE (name, timestamp) in (
+WHERE (name, timestamp) IN (
     SELECT
-        name,
+    name,
     timestamp
-FROM
+    FROM
     scores
-GROUP BY strftime('%Y-%m', datetime(timestamp, 'unixepoch'))
-HAVING secondsToSolve = min(secondsToSolve)
+    GROUP BY DATE_FORMAT(FROM_UNIXTIME(timestamp), '%Y-%m')
+    HAVING secondsToSolve = MIN(secondsToSolve)
     )
 GROUP BY name
 ORDER BY fastest_count DESC, name
@@ -63,7 +64,7 @@ ORDER BY fastest_count DESC, name
 
 type GetFastestPlayersByMonthRow struct {
 	Name         string
-	Week         string
+	Month        sql.NullString
 	FastestCount int64
 }
 
@@ -76,7 +77,7 @@ func (q *Queries) GetFastestPlayersByMonth(ctx context.Context) ([]GetFastestPla
 	var items []GetFastestPlayersByMonthRow
 	for rows.Next() {
 		var i GetFastestPlayersByMonthRow
-		if err := rows.Scan(&i.Name, &i.Week, &i.FastestCount); err != nil {
+		if err := rows.Scan(&i.Name, &i.Month, &i.FastestCount); err != nil {
 			return nil, err
 		}
 		items = append(items, i)
@@ -93,18 +94,18 @@ func (q *Queries) GetFastestPlayersByMonth(ctx context.Context) ([]GetFastestPla
 const getFastestPlayersByWeek = `-- name: GetFastestPlayersByWeek :many
 SELECT
     name,
-    group_concat(strftime('%Y-%m', datetime(timestamp, 'unixepoch')),', ') as week,
-    COUNT(*) as fastest_count
+    GROUP_CONCAT(DATE_FORMAT(FROM_UNIXTIME(timestamp), '%Y-%u'), ', ') AS week,
+    COUNT(*) AS fastest_count
 FROM
     scores
-WHERE (name, timestamp) in (
+WHERE (name, timestamp) IN (
     SELECT
         name,
     timestamp
 FROM
     scores
-GROUP BY strftime('%Y-%m', datetime(timestamp, 'unixepoch'))
-HAVING secondsToSolve = min(secondsToSolve)
+GROUP BY DATE_FORMAT(FROM_UNIXTIME(timestamp), '%Y-%u')
+HAVING secondsToSolve = MIN(secondsToSolve)
     )
 GROUP BY name
 ORDER BY fastest_count DESC, name
@@ -112,7 +113,7 @@ ORDER BY fastest_count DESC, name
 
 type GetFastestPlayersByWeekRow struct {
 	Name         string
-	Week         string
+	Week         sql.NullString
 	FastestCount int64
 }
 
@@ -143,8 +144,8 @@ const getFastestTimeByMonth = `-- name: GetFastestTimeByMonth :many
 SELECT
     name,
     gameNumber,
-    min(secondsToSolve) as minSecondsToSolve,
-    strftime('%Y-%m', datetime(timestamp, 'unixepoch')) as date
+    MIN(secondsToSolve) AS minSecondsToSolve,
+    DATE_FORMAT(FROM_UNIXTIME(timestamp), '%Y-%m') AS date
 FROM
     scores
 GROUP BY name, date
@@ -153,9 +154,9 @@ ORDER BY date, minSecondsToSolve
 
 type GetFastestTimeByMonthRow struct {
 	Name              string
-	Gamenumber        int64
+	Gamenumber        int32
 	Minsecondstosolve interface{}
-	Date              interface{}
+	Date              string
 }
 
 func (q *Queries) GetFastestTimeByMonth(ctx context.Context) ([]GetFastestTimeByMonthRow, error) {

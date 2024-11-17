@@ -22,28 +22,29 @@ WHERE
 SELECT
     name,
     gameNumber,
-    min(secondsToSolve) as minSecondsToSolve,
-    strftime('%Y-%m', datetime(timestamp, 'unixepoch')) as date
+    MIN(secondsToSolve) AS minSecondsToSolve,
+    DATE_FORMAT(FROM_UNIXTIME(timestamp), '%Y-%m') AS date
 FROM
     scores
 GROUP BY name, date
 ORDER BY date, minSecondsToSolve;
 
+
 -- name: GetFastestPlayersByMonth :many
 SELECT
     name,
-    group_concat(strftime('%Y-%m', datetime(timestamp, 'unixepoch')),', ') as week,
-    COUNT(*) as fastest_count
+    GROUP_CONCAT(DATE_FORMAT(FROM_UNIXTIME(timestamp), '%Y-%m'), ', ') AS month,
+    COUNT(*) AS fastest_count
 FROM
     scores
-WHERE (name, timestamp) in (
+WHERE (name, timestamp) IN (
     SELECT
-        name,
+    name,
     timestamp
-FROM
+    FROM
     scores
-GROUP BY strftime('%Y-%m', datetime(timestamp, 'unixepoch'))
-HAVING secondsToSolve = min(secondsToSolve)
+    GROUP BY DATE_FORMAT(FROM_UNIXTIME(timestamp), '%Y-%m')
+    HAVING secondsToSolve = MIN(secondsToSolve)
     )
 GROUP BY name
 ORDER BY fastest_count DESC, name;
@@ -51,24 +52,25 @@ ORDER BY fastest_count DESC, name;
 -- name: GetFastestPlayersByWeek :many
 SELECT
     name,
-    group_concat(strftime('%Y-%m', datetime(timestamp, 'unixepoch')),', ') as week,
-    COUNT(*) as fastest_count
+    GROUP_CONCAT(DATE_FORMAT(FROM_UNIXTIME(timestamp), '%Y-%u'), ', ') AS week,
+    COUNT(*) AS fastest_count
 FROM
     scores
-WHERE (name, timestamp) in (
+WHERE (name, timestamp) IN (
     SELECT
         name,
     timestamp
 FROM
     scores
-GROUP BY strftime('%Y-%m', datetime(timestamp, 'unixepoch'))
-HAVING secondsToSolve = min(secondsToSolve)
+GROUP BY DATE_FORMAT(FROM_UNIXTIME(timestamp), '%Y-%u')
+HAVING secondsToSolve = MIN(secondsToSolve)
     )
 GROUP BY name
 ORDER BY fastest_count DESC, name;
 
+
 -- name: CreateScore :exec
-INSERT OR IGNORE INTO scores (
+INSERT IGNORE INTO scores (
     name,
     gameNumber,
     secondsToSolve,

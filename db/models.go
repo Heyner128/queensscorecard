@@ -5,9 +5,9 @@
 package db
 
 type Score struct {
-	ID             int64
+	ID             int32
 	Name           string
-	Gamenumber     int64
-	Secondstosolve int64
-	Timestamp      int64
+	Gamenumber     int32
+	Secondstosolve int32
+	Timestamp      int32
 }
