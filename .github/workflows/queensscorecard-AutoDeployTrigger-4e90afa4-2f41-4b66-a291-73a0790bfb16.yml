@@ -35,14 +35,11 @@ jobs:
         uses: azure/container-apps-deploy-action@v2
         with:
           appSourcePath: ${{ github.workspace }}
-          _dockerfilePathKey_: _dockerfilePath_
-          registryUrl: 
+          registryUrl: heyner128.azurecr.io
           registryUsername: ${{ secrets.QUEENSSCORECARD_REGISTRY_USERNAME }}
           registryPassword: ${{ secrets.QUEENSSCORECARD_REGISTRY_PASSWORD }}
           containerAppName: queensscorecard
           resourceGroup: DefaultResourceGroup-PAR
           imageToBuild: default/[parameters('containerAppName')]:${{ github.sha }}
-          _buildArgumentsKey_: |
-            _buildArgumentsValues_
 
 
