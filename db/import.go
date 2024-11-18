@@ -13,15 +13,19 @@ import (
 //go:embed schema.sql
 var ddl string
 
-func RunImport() error {
+func CreateSchema(ctx *context.Context, db *sql.DB) {
+	if _, err := db.ExecContext(*ctx, ddl); err != nil {
+		log.Fatal(err)
+	}
+}
+
+func RunImport() {
 	ctx := context.Background()
 	db, err := sql.Open("mysql", os.Getenv("DB_CONNECTION_STRING"))
 	if err != nil {
-		return err
+		log.Fatal(err)
 	}
-	if _, err := db.ExecContext(ctx, ddl); err != nil {
-		return err
-	}
+	CreateSchema(&ctx, db)
 	queries := New(db)
 	for score := range messages.GetScoresFromExport() {
 		err := queries.CreateScore(ctx, CreateScoreParams{
@@ -31,10 +35,9 @@ func RunImport() error {
 			Timestamp:      int32(score.Time.Unix()),
 		})
 		if err != nil {
-			return err
+			log.Fatal(err)
 		}
 		log.Println(score)
 
 	}
-	return nil
 }

@@ -43,28 +43,28 @@ func (q *Queries) CreateScore(ctx context.Context, arg CreateScoreParams) error 
 }
 
 const getFastestPlayersByMonth = `-- name: GetFastestPlayersByMonth :many
-SELECT
-    name,
-    GROUP_CONCAT(DATE_FORMAT(FROM_UNIXTIME(timestamp), '%Y-%m'), ', ') AS month,
-    COUNT(*) AS fastest_count
+WITH monthly_fastest AS (
+    SELECT
+        name,
+        DATE_FORMAT(FROM_UNIXTIME(timestamp), '%Y-%m') AS month,
+    MIN(secondsToSolve) AS min_seconds
 FROM
     scores
-WHERE (name, timestamp) IN (
-    SELECT
-    name,
-    timestamp
-    FROM
-    scores
-    GROUP BY DATE_FORMAT(FROM_UNIXTIME(timestamp), '%Y-%m')
-    HAVING secondsToSolve = MIN(secondsToSolve)
+GROUP BY DATE_FORMAT(FROM_UNIXTIME(timestamp), '%Y-%m')
     )
+SELECT
+    name,
+    GROUP_CONCAT(month ORDER BY month) AS months,
+    COUNT(*) AS fastest_count
+FROM
+    monthly_fastest
 GROUP BY name
-ORDER BY fastest_count DESC, name
+ORDER BY fastest_count, name
 `
 
 type GetFastestPlayersByMonthRow struct {
 	Name         string
-	Month        sql.NullString
+	Months       sql.NullString
 	FastestCount int64
 }
 
@@ -77,7 +77,7 @@ func (q *Queries) GetFastestPlayersByMonth(ctx context.Context) ([]GetFastestPla
 	var items []GetFastestPlayersByMonthRow
 	for rows.Next() {
 		var i GetFastestPlayersByMonthRow
-		if err := rows.Scan(&i.Name, &i.Month, &i.FastestCount); err != nil {
+		if err := rows.Scan(&i.Name, &i.Months, &i.FastestCount); err != nil {
 			return nil, err
 		}
 		items = append(items, i)
@@ -92,23 +92,23 @@ func (q *Queries) GetFastestPlayersByMonth(ctx context.Context) ([]GetFastestPla
 }
 
 const getFastestPlayersByWeek = `-- name: GetFastestPlayersByWeek :many
-SELECT
-    name,
-    GROUP_CONCAT(DATE_FORMAT(FROM_UNIXTIME(timestamp), '%Y-%u'), ', ') AS week,
-    COUNT(*) AS fastest_count
-FROM
-    scores
-WHERE (name, timestamp) IN (
+WITH weekly_fastest AS (
     SELECT
         name,
-    timestamp
+        DATE_FORMAT(FROM_UNIXTIME(timestamp), '%Y-%u') AS week,
+    MIN(secondsToSolve) AS min_seconds
 FROM
     scores
 GROUP BY DATE_FORMAT(FROM_UNIXTIME(timestamp), '%Y-%u')
-HAVING secondsToSolve = MIN(secondsToSolve)
     )
+SELECT
+    name,
+    GROUP_CONCAT(week ORDER BY week) AS week,
+    COUNT(*) AS fastest_count
+FROM
+    weekly_fastest
 GROUP BY name
-ORDER BY fastest_count DESC, name
+ORDER BY fastest_count, name
 `
 
 type GetFastestPlayersByWeekRow struct {
