@@ -51,7 +51,7 @@ func scores(c *gin.Context) {
 			Nombre:               v.Name,
 			NumeroDeJuego:        int(v.Gamenumber),
 			SegundosParaResolver: int(v.Secondstosolve),
-			Fecha:                time.UnixMilli(int64(v.Timestamp)),
+			Fecha:                time.Unix(int64(v.Timestamp), 0),
 		})
 	}
 	c.JSON(http.StatusOK, response)
