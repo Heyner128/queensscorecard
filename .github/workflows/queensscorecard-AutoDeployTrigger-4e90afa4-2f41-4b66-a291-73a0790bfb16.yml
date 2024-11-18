@@ -40,6 +40,6 @@ jobs:
           registryPassword: ${{ secrets.QUEENSSCORECARD_REGISTRY_PASSWORD }}
           containerAppName: queensscorecard
           resourceGroup: DefaultResourceGroup-PAR
-          imageToBuild: default/queensscorecard:${{ github.sha }}
+          imageToBuild: heyner128.azurecr.io/queensscorecard:${{ github.sha }}
 
 
